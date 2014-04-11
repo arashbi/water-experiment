@@ -35,7 +35,14 @@ public class WaterExperiment implements ApplicationListener {
 			+ "   v_texCoords = a_texCoord0; \n"
 			+ "   gl_Position =  u_worldView * a_position;  \n"
 			+ "}                            \n";
-	
+
+    String waveVertexShader =
+    			"attribute vec4 a_position;    \n"
+                + "uniform mat4 u_worldView;\n"
+    			+ "void main()                  \n"
+    			+ "{                            \n"
+    			+ "   gl_Position =  u_worldView * a_position;  \n"
+    			+ "}                            \n";
 	String fragmentShader = "#ifdef GL_ES\n"
 			+ "precision mediump float;\n"
 			+ "#endif\n"
@@ -62,6 +69,14 @@ public class WaterExperiment implements ApplicationListener {
 			+ "  gl_FragColor = v_color * texture2D(u_texture, v_texCoords);\n"
 			+ "}";
 
+    String waveShaderString = "#ifdef GL_ES\n"
+    		    + "precision mediump float;\n"
+    			+ "#endif\n"
+    			+ "void main()                                  \n"
+    			+ "{                                            \n"
+    			+ "  gl_FragColor = vec4(1.0f, 0.0f, 0.0f, 1.0f);\n"
+    			+ "}";
+
 
 	ShaderProgram shader;
 	ShaderProgram waterShader;
@@ -73,8 +88,11 @@ public class WaterExperiment implements ApplicationListener {
 	
 	private Texture waterTexture;
 	private Texture waterDisplacement;
+    private WaterSpringSimulation simulator;
+    private Mesh mesh;
+    private ShaderProgram waveShader;
 
-	@Override
+    @Override
 	public void create() {
 		float w = Gdx.graphics.getWidth();
 		float h = Gdx.graphics.getHeight();
@@ -100,15 +118,20 @@ public class WaterExperiment implements ApplicationListener {
 		
 		waterShader = new ShaderProgram(vertexShader, waterShaderString);
 		waterShader.setUniformMatrix("u_projTrans", matrix);
-		
-		waterMesh = createQuad(-1, -1, 1, -1, 1, -0.3f, -1, -0.3f);
+		waveShader = new ShaderProgram(waveVertexShader, waveShaderString);
+        waveShader.setUniformMatrix("u_projTrans", matrix);
+		if(!waveShader.isCompiled()){
+            System.out.println("not compiled");
+            System.out.println(waveShader.getLog());
+        }
+        waterMesh = createQuad(-1, -1, 1, -1, 1, -0.3f, -1, -0.3f);
 
 		//BACKGROUND SPRITE
 		sprite = new Sprite(region);
 		sprite.setSize(1f, 1.3f * sprite.getHeight() / sprite.getWidth());
 		sprite.setOrigin(sprite.getWidth() / 2, sprite.getHeight() / 2);
 		sprite.setPosition(-sprite.getWidth() / 2, -sprite.getHeight() / 2);
-		
+		simulator = new WaterSpringSimulation();
 		time=1f;
 	}
 
@@ -128,31 +151,32 @@ public class WaterExperiment implements ApplicationListener {
 		float angle = time * (2 * MathUtils.PI);
 		if (angle > (2 * MathUtils.PI))
 			angle -= (2 * MathUtils.PI);
-
+        Gdx.gl20.glClearColor(1,1,1,1);
 		Gdx.gl20.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
 		
 		//RENDER BACKGROUND 
 		batch.begin();
-        batch.draw(backgroundTexture,0,0);
+//        batch.draw(backgroundTexture,0,0);
 //		batch.setShader(waterShader);
 //		waterShader.setUniformMatrix("u_worldView", camera.combined);
 //		sprite.draw(batch);
 		batch.end();
-		
+		simulator.update(dt);
+        mesh = simulator.createMesh();
 		//RENDER WATER
 		Gdx.gl20.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 		Gdx.gl20.glEnable(GL20.GL_BLEND);
-		waterTexture.bind(1);
-		waterDisplacement.bind(2);
-
-		shader.begin();
-		shader.setUniformMatrix("u_worldView",  matrix);
-		shader.setUniformi("u_texture", 1);
-		shader.setUniformi("u_texture2", 2);
-		shader.setUniformf("timedelta", -angle);
-		waterMesh.render(shader, GL20.GL_TRIANGLE_FAN);
-		shader.end();
+//		waterTexture.bind(1);
+//		waterDisplacement.bind(2);
+		waveShader.begin();
+        waveShader.setUniformMatrix("u_worldView",  matrix);
+        mesh.render(waveShader,GL20.GL_TRIANGLE_FAN);
+//		shader.setUniformi("u_texture", 1);
+//		shader.setUniformi("u_texture2", 2);
+//		shader.setUniformf("timedelta", -angle);
+//		waterMesh.render(shader, GL20.GL_TRIANGLE_FAN);
+//		waveShader.end();
 		
 	}
 

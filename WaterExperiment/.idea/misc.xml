@@ -10,6 +10,7 @@
       </map>
     </option>
   </component>
+  <component name="IdProvider" IDEtalkID="D5EF78C6963305E530FB7CADFF4FEAD0" />
   <component name="ProjectRootManager" version="2" languageLevel="JDK_1_6" assert-keyword="true" jdk-15="true" project-jdk-name="1.7" project-jdk-type="JavaSDK">
     <output url="file://$PROJECT_DIR$/out" />
   </component>
